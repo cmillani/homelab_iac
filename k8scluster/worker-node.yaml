@@ -1,0 +1,10 @@
+---
+- name: Kubeadm Worker Join
+  become: true
+  hosts: all
+  gather_facts: no
+  tasks:
+    - import_tasks: base-node.yaml
+    - name: Join
+      shell: |
+        kubeadm join k8s.cadumillani.com.br:6443 --token {{ k8s_secret }} --discovery-token-unsafe-skip-ca-verification
