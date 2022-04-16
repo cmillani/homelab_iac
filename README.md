@@ -20,12 +20,12 @@ terraform apply
 
 # Roadmap
 
-[x] Simple VM Provisioning
-[-] Automatic k8s cluster creation (kubeadm)
-[ ] Remote state (s3)
-[ ] Automatic k8s cluster population
-[ ] Reuse IaC (terragrunt?)
-[ ] PXE - IaC on baremetal
+- [x] Simple VM Provisioning
+- [x] Automatic k8s cluster creation (kubeadm)
+- [ ] Remote state (s3)
+- [ ] Automatic k8s cluster population
+- [ ] Reuse IaC (terragrunt?)
+- [ ] PXE - IaC on baremetal
 
 # Interests
  
