@@ -1,0 +1,3 @@
+module "velero" {
+  source = "./velero"
+}

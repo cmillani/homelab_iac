@@ -11,6 +11,12 @@ First, configure the provider with a valid qemu string, and configure your host 
 For example, a `qemu+ssh` string should require pre-installed keys on the remote.
 Fill those informations on `locals.tf`
 
+Also, setup aws credentials, using aws cli you can use the following, inputting valid IAM credentials:
+
+```sh
+aws configure
+```
+
 ```sh
 # This will show that will be done
 terraform plan

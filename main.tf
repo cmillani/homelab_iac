@@ -47,3 +47,8 @@ module "k8s_cluster" {
     libvirt.node02 = libvirt.homelab
   }
 }
+
+## Cluster Resources
+module "clusterapps" {
+  source = "./clusterapps"
+}
