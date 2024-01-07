@@ -36,3 +36,6 @@ terraform.rc
 
 # Ansible
 *.retry
+
+# Terragrunt
+.terragrunt-cache

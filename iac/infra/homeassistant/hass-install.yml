@@ -1,0 +1,97 @@
+---
+- name: Hassio Install
+  become: true
+  remote_user: carlos
+  hosts: all
+  gather_facts: no
+  tasks:
+    # Machine just created, wait until connection available
+    - name: Wait 600 seconds for target connection to become reachable/usable
+      wait_for_connection:
+    # Cloud init may still be running, and could conflict with commands here
+    - name: Wait cloud init success
+      ansible.builtin.shell:
+        cmd: cloud-init status --wait
+      register: cinitres
+      failed_when: '"status: done" not in cinitres.stdout'
+    # Setup dependencies
+    - name: Gathering facts
+      setup:
+    - name: Install Docker Dependencies
+      apt: 
+        name: "{{ item }}"
+        state: latest
+        update_cache: yes
+        lock_timeout: 600
+      loop: ['apt-transport-https', 'ca-certificates', 'curl', 'gnupg', 'lsb-release']
+    - name: Add Docker GPG Key
+      apt_key: 
+        url: https://download.docker.com/linux/debian/gpg
+        state: present
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/debian bullseye stable
+        state: present
+    - name: Install Docker
+      apt: 
+        name: "{{ item }}"
+        state: latest
+        update_cache: yes
+      loop: ['docker-ce', 'docker-ce-cli', 'containerd.io']
+    - name: Install Additional Dependencies
+      apt: 
+        name: "{{ item }}"
+        state: latest
+        update_cache: yes
+      loop: ['jq','wget','curl','udisks2','libglib2.0-bin','dbus', 'rsync']
+    # Prepares folder for downloads
+    - name: Create a directory if it does not exist
+      file:
+        path: /opt/haosagent
+        state: directory
+        mode: '0755'
+      register: folder
+    # Installs OS_Agent
+    - name: Get os_agent URL
+      shell: 
+        cmd: curl -s https://api.github.com/repos/home-assistant/os-agent/releases/latest | jq -r ".assets[] | select(.name | contains(\"x86_64\")) | .browser_download_url"
+        warn: False # Only want output name, we are not downloading anything
+      register: os_agent_url
+    - name: Download os_agent
+      get_url: 
+        url="{{ os_agent_url.stdout }}"
+        dest="{{ folder.path }}" # Download to folder so we can use "Changed" status
+      register: os_agent_path
+    - name: Install os_agent
+      apt: deb="{{os_agent_path.dest}}"
+      when: os_agent_path.changed
+    # Installs Supervisor
+    - name: Download supervisor
+      get_url: 
+        url="https://github.com/home-assistant/supervised-installer/releases/latest/download/homeassistant-supervised.deb"
+        dest="{{ folder.path }}" # Download to folder so we can use "Changed" status
+      register: supervisor_path
+    - name: Install supervisor
+      apt: deb="{{supervisor_path.dest}}"
+      when: supervisor_path.changed
+    # We need to wait for docker before copying backup file - else supervisor does not start
+    - name: Wait Hassio Setup
+      ansible.builtin.shell:
+        cmd: ha backups
+      register: ha_cli_status
+      until: ha_cli_status is success
+      delay: 10
+      retries: 300
+    - name: Synchronization of src on the control machine to dest on the remote hosts
+      synchronize:
+        src: /home/carlos/backups/111cfc64.tar
+        dest: /usr/share/hassio/backup
+    - name: Restore backup
+      ansible.builtin.shell:
+        cmd: ha backups reload && ha backups restore 111cfc64
+
+
+
+
+
+      
